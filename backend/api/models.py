@@ -110,7 +110,7 @@ class Post (models.Model):
         return self.title
 
     class Meta :
-        ordering = ["-date"]
+        #ordering = ["-date"]
         verbose_name_plural = "Post"
 
     def save (self, *args, **kwargs):

@@ -28,39 +28,43 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
         return token
 
 
-# Define a serializer for user registration, which inherits from serializers.ModelSerializer
+# Define a serializer for user registration, which inherits from serializers.ModelSerialize
+
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=True, validators=[validate_password])
     password2 = serializers.CharField(write_only=True, required=True)
 
     class Meta:
-        # Specify the model that this serializer is associated with
-        models = api_models.User
+        # Corrija o nome para "model"
+        model = api_models.User  # Certifique-se de que api_models.User é um modelo válido
+        fields = ['full_name', 'email',  'password', 'password2']
 
-        fields = ('full_name', 'email', 'password', 'password2')
-
-    def validate (self, attr):
-        if attr['password'] != attr['password2']:
+    def validate(self, attrs):
+        # Verifique se as senhas coincidem
+        if attrs['password'] != attrs['password2']:
             raise serializers.ValidationError({"password": "Password fields didn't match."})
         
-        return attr
+        return attrs
     
-    def create (self, validated_data):
+    def create(self, validated_data):
+        # Remova o campo password2 pois ele não faz parte do modelo
+        validated_data.pop('password2')
+        
+        # Crie o usuário com os campos restantes
         user = api_models.User.objects.create(
-            full_name = validated_data['full_name'],
-            email = validated_data['email'],
+            full_name=validated_data['full_name'],
+            email=validated_data['email'],
         )
 
-
-        email_username, mobile = user.email.split('@')
+        # Defina o username e a senha do usuário
+        email_username, _ = user.email.split('@')
         user.username = email_username
-
-
-        user.set_password(validate_password['password'])
+        user.set_password(validated_data['password'])
+        
+        # Salve o usuário e retorne a instância criada
         user.save()
-
         return user
-    
+
 
 class UserSerializer (serializers.ModelSerializer):
     class Meta:
@@ -86,7 +90,7 @@ class CategorySerializer (serializers.ModelSerializer):
         This allows you to access all Post objects related to a Category instance.
     '''
     def get_post_count(self, category):
-        return category.posts.count()
+         return category.post_set.count()  # Modificado para post_set
     
     class Meta:
         model = api_models.Category
